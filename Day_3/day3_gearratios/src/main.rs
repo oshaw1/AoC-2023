@@ -1,67 +1,131 @@
 use std::env;
 use std::fs;
 
+#[derive(Clone, Debug)]
+struct Coordinates {
+    x: usize,
+    y: usize,
+}
+
+#[derive(Clone, Debug)]
+struct Number {
+    str_contents: String,
+    length: usize,
+    coordinates: Coordinates,
+    symbols: Vec<char>,
+}
+
 fn main() {
-    // Collect command-line arguments
     let args: Vec<String> = env::args().collect();
 
-    // Ensure proper arguments are provided
     if args.len() != 2 {
-        eprintln!("Please provide the argument in the format: cargo run --release src/input/input_dayX.txt");
+        println!("Usage: {} <input_file>", args[0]);
         return;
     }
 
-    // Retrieve the file name from the arguments
-    let file_name = &args[1];
-
-    // Read the contents of the file into a string
-    let input = match fs::read_to_string(file_name) {
+    let filename = &args[1];
+    let input = match fs::read_to_string(filename) {
         Ok(content) => content,
         Err(_) => {
-            eprintln!("Error reading the file");
+            println!("Error reading the file");
             return;
         }
     };
 
-    // Define symbols to check for adjacent digits
-    let symbols: Vec<char> = vec!['*', '+', '#', '$', '-', '=', '&', '%', '@'];
+    let output = part1(&input);
+    println!("{}", output);
+}
 
-    // Split the input into lines
-    let lines: Vec<&str> = input.trim().split('\n').collect();
+fn part1(input: &str) -> i32 {
+    let mut total_sum = 0;
+    let lines = input.lines();
 
-    // Function to check if a character is a symbol
-    fn is_symbol(c: char, symbols: &[char]) -> bool {
-        symbols.contains(&c)
-    }
+    println!("{}",input);
+    println!("");
+    
+    let mut nums :Vec<Number> = Vec::new();
+    let mut newnum = Number{str_contents: "".to_owned(), length: 0, coordinates: Coordinates { x: 0, y: 0 }, symbols: Vec::new()};
+    let mut appending_num = false;
 
-    // Function to check if a character is a digit
-    fn is_digit(c: char) -> bool {
-        c.is_digit(10)
-    }
+    let line_len = lines.clone().nth(0).expect("Should have at least 1 line").len();
 
-    // Function to calculate sum of adjacent digits to symbols
-    let mut sum = 0;
-    for (y, line) in lines.iter().enumerate() {
-        for (x, c) in line.chars().enumerate() {
-            if is_symbol(c, &symbols) {
-                for dx in -1..=1 {
-                    for dy in -1..=1 {
-                        let nx = x as i32 + dx;
-                        let ny = y as i32 + dy;
-
-                        if nx >= 0 && ny >= 0 && ny < lines.len() as i32 {
-                            let row = &lines[ny as usize];
-                            if let Some(adj_char) = row.chars().nth(nx as usize) {
-                                if is_digit(adj_char) {
-                                    sum += adj_char.to_digit(10).unwrap() as i32;
-                                }
-                            }
-                        }
-                    }
+    for (y, line) in lines.clone().enumerate(){
+        for (x, c) in line.chars().enumerate(){            
+            // println!("{}, {} => {}", x, y, c);
+            if !c.is_digit(10) && !appending_num {
+                continue;
+            }
+            if c.is_digit(10) {
+                if !appending_num {
+                    // println!("Found start of number {}", c);
+                    newnum = Number { str_contents: c.to_string(), length: 1, coordinates: Coordinates { x: x, y: y }, symbols: Vec::new()};
+                    appending_num = true;
+                }else{
+                    newnum.str_contents += &c.to_string();
+                    newnum.length += 1;
                 }
+            }
+
+            if appending_num && (!c.is_digit(10) || x == line_len - 1){
+                let min_x = if newnum.coordinates.x == 0 { 0 } else {newnum.coordinates.x - 1};
+                let max_x = if newnum.coordinates.x + newnum.length < line_len { newnum.coordinates.x + newnum.length } else { line_len - 1 };
+
+                let min_y = if newnum.coordinates.y > 0 { y - 1 } else { y };
+                let max_y = if newnum.coordinates.y < line_len - 1 { y + 1} else { y };
+            
+                for check_y in min_y..=max_y {
+                    for check_char in lines.clone().nth(check_y).expect("Should be within range")[min_x..=max_x].chars(){
+                        if !check_char.is_digit(10) && check_char != '.' {
+                            newnum.symbols.push(check_char);
+                        }
+                        // print!("{}", check_char);
+                    }
+                    // println!("");
+                }
+                if newnum.symbols.len() == 0 {
+                    for check_y in min_y..=max_y {
+                        print!("{}: ", check_y);
+                        for check_char in lines.clone().nth(check_y).expect("Should be within range")[min_x..=max_x].chars(){
+                            print!("{}",check_char);
+                        }
+                        println!("");
+                    }
+                    println!("Number completed: {}, Length: {}, Coordinates: {:?}, Symbols: {}", newnum.str_contents, newnum.length, newnum.coordinates, newnum.symbols.len());
+                }
+
+
+                appending_num = false;
+                nums.push(newnum.clone());
             }
         }
     }
 
-    println!("The sum of all part numbers adjacent to symbols is: {}", sum);
+    for num in nums {
+        if num.symbols.len() > 0 {
+            total_sum += num.str_contents.parse::<i32>().expect("Should be a string repr. of a number");
+        } else {
+            // println!("{:?}", num);
+
+        }
+    }
+    total_sum
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_part1() {
+        let input = "467..114..\n...*......\n..35...633\n......#...\n617*......\n.....+.58.\n..592.....\n......755.\n...$.*....\n.664.598..";
+        let result = part1(input);
+        assert_eq!(result, 4361);
+    }
+
+    #[test]
+    fn test_part1_full_input() {
+        let input = include_str!("./input3.txt");
+        let result = part1(input);
+        assert_eq!(result, 549908);
+    }
 }
