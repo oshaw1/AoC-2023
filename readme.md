@@ -1,10 +1,11 @@
-#Advent of Code 2023 - Rust
+# Advent of Code 2023 - Rust
 
-##How to run
+## How to run
 ```
 cargo run --release {day_task}/src/input/{input_day}
 ```
-##Scores
+## Scores
+
 Day 1 : 2 stars
 Day 2 : 2 stars
 Day 3 : 1 star
