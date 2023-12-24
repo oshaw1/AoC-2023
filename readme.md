@@ -1,8 +1,10 @@
 # Advent of Code 2023 - Rust
 
 ## How to run
+
+Please run each days task from their respective task and part
 ```
-cargo run --release {day_task}/src/input/{input_day}
+cargo run /src/input/{input_day}
 ```
 ## Scores
 
