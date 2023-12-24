@@ -12,7 +12,7 @@ Day 1 : 2 stars
 
 Day 2 : 2 stars
 
-Day 3 : 2 star
+Day 3 : 2 stars
 
 Day 4 :
 
